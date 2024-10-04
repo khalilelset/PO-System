@@ -1,0 +1,144 @@
+app: backend # Make sure this is lowercase
+
+service: Backend
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  environment:
+    DB_HOST: posystemdb.cjeu04uek25d.us-east-1.rds.amazonaws.com
+    DB_USER: admin
+    DB_PASSWORD: posystem01
+    DB_NAME: POSystemdb
+    DB_PORT: 3306
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+      - lambda:InvokeFunction
+      Resource:
+      - arn:aws:lambda:us-east-1:891377200709:function:Backend-dev-AIProcessing
+    - Effect: Allow
+      Action:
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminAddUserToGroup
+        - cognito-idp:AdminGetUser
+        - cognito-idp:ListUsers
+        - cognito-idp:AdminListUsers
+        - cognito-idp:AdminUpdateUserAttributes
+        - cognito-idp:AdminDeleteUser
+      Resource: arn:aws:cognito-idp:us-east-1:891377200709:userpool/us-east-1_7np4XcTfB
+
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+        - ses:SendTemplatedEmail
+      Resource:
+        - arn:aws:ses:us-east-1:891377200709:identity/zaynab-wehbe@hotmail.com
+package:
+  individually: true
+
+functions:
+  createUser:
+    handler: modules/users/controller.createUser
+    events:
+      - http:
+          path: /user
+          method: post
+          cors: true
+
+  getAllUsers:
+    handler: modules/users/controller.getAllUsers
+    events:
+      - http:
+          path: /users
+          method: get
+          cors: true
+
+
+  updateUser:
+    handler: modules/users/controller.updateUser
+    events:
+      - http:
+          path: /updateuserId/{id}
+          method: put
+          cors: true
+
+  deleteUser:
+    handler: modules/users/controller.deleteUser
+    events:
+      - http:
+          path: /user/{id}
+          method: delete
+          cors: true
+
+  confirmUser:
+    handler: modules/users/controller.confirmUser
+    events:
+      - http:
+          path: /confirmUserId
+          method: put
+          cors: true
+
+  getOrders:
+    handler: modules/orders/order.getAllOrdersHandler
+    timeout: 30
+    events:
+      - http:
+          path: /orders
+          method: get
+          cors: true
+
+  getOrderByIdWorker:
+    handler: modules/orders/order.getOrderByWorkerIdHandler
+    timeout: 30
+    events:
+      - http:
+          path: /ordersbyworker
+          method: get
+          cors: true
+
+  getOrderById:
+    handler: modules/orders/order.getOrderByIdHandler
+    timeout: 30
+    events:
+      - http:
+          path: /getorderbyId/{id}
+          method: get
+          cors: true
+
+  createOrder:
+    handler: modules/orders/order.createOrderHandler
+    timeout: 30
+    events:
+      - http:
+          path: /createorders
+          method: post
+          cors: true
+
+  updateOrderHandler:
+    handler: modules/orders/order.updateOrderHandler
+    events:
+      - http:
+          path: /orderId/{id}
+          method: put
+          cors: true
+
+  AIProcessing:
+    handler: modules/trigger/AIProcessing.handler
+    timeout: 60
+    memorySize: 512
+
+
+plugins:
+  - serverless-offline
+  - serverless-esbuild
+
+build:
+  esbuild: false
+
+custom:
+  serverless-offline:
+    noPrependStageInUrl: true
+  esbuild:
+    bundle: true
+    minify: true
